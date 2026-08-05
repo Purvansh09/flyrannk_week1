@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Do Stale Pages Actually Decline? — A Content Refresh Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F5F1;
+    --ink:#16202B;
+    --ink-soft:#4B5563;
+    --teal:#0E7C86;
+    --teal-soft:#DCEBEA;
+    --rust:#B8541F;
+    --rust-soft:#F3E4D9;
+    --line:#D8DBD3;
+    --panel:#101A22;
+    --panel-text:#CFE8E4;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif; font-size:17px; line-height:1.65;
+  }
+  h1,h2,h3{font-family:'Source Serif 4', serif; font-weight:700; color:var(--ink); margin:0 0 .4em;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:var(--teal);}
+
+  /* position-ladder rule: the signature element */
+  .ladder{height:6px; width:100%; border-radius:3px;
+    background:linear-gradient(90deg,#0E7C86 0%, #0E7C86 20%, #3C8F8A 20%, #3C8F8A 40%,
+      #7FA9AD 40%, #7FA9AD 60%, #C79A78 60%, #C79A78 80%, #B8541F 80%, #B8541F 100%);
+    margin:2.6em 0;}
+  .ladder.tight{margin:0 0 2.2em;}
+
+  header.hero{max-width:920px; margin:0 auto; padding:5.5em 24px 2em;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--teal); margin-bottom:1.1em; display:flex; gap:.6em; align-items:center;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--rust);}
+  h1.title{font-size:2.6rem; line-height:1.15; max-width:14ch;}
+  .subtitle{font-size:1.15rem; color:var(--ink-soft); max-width:56ch; margin-top:.6em; font-weight:400;}
+  .stat-row{display:flex; gap:2.4em; flex-wrap:wrap; margin-top:2.4em;}
+  .stat-row .stat{font-family:'IBM Plex Mono', monospace;}
+  .stat .num{font-size:1.7rem; color:var(--ink); font-weight:600; display:block;}
+  .stat .lbl{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em;}
+
+  main{max-width:760px; margin:0 auto; padding:0 24px 8em;}
+  section{margin-bottom:3.6em;}
+  .section-label{font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--rust); margin-bottom:.6em;}
+  h2{font-size:1.7rem; margin-bottom:.7em;}
+  p{margin:0 0 1.1em;}
+  ul,ol{margin:0 0 1.1em; padding-left:1.3em;}
+  li{margin-bottom:.45em;}
+
+  .callout{background:var(--teal-soft); border-left:3px solid var(--teal); padding:1em 1.3em;
+    border-radius:0 6px 6px 0; margin:1.4em 0; font-size:.97rem;}
+  .callout.warn{background:var(--rust-soft); border-left-color:var(--rust);}
+  .callout .tag{font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--teal); display:block; margin-bottom:.4em;}
+  .callout.warn .tag{color:var(--rust);}
+
+  figure{margin:1.8em 0;}
+  figure img{width:100%; border:1px solid var(--line); border-radius:4px; display:block;}
+  figcaption{font-size:.88rem; color:var(--ink-soft); margin-top:.6em; text-align:left;}
+  figcaption b{color:var(--ink);}
+
+  table{width:100%; border-collapse:collapse; margin:1.4em 0; font-size:.92rem;}
+  th,td{text-align:left; padding:.55em .7em; border-bottom:1px solid var(--line);}
+  th{font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-soft); font-weight:500;}
+  td.mono, th.mono{font-family:'IBM Plex Mono', monospace;}
+  tr:last-child td{border-bottom:none;}
+  .win{color:var(--teal); font-weight:600;}
+  .lose{color:var(--rust);}
+
+  .panel{background:var(--panel); color:var(--panel-text); border-radius:8px; padding:1.6em 1.8em; margin:1.4em 0;}
+  .panel .section-label{color:#7FCFC6;}
+  .panel a{color:#9FE0DA;}
+  .panel code, .panel .mono{color:#E8F5F3;}
+  .panel ul{margin-bottom:0;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:1.4em;}
+  @media(max-width:640px){ .grid2{grid-template-columns:1fr;} h1.title{font-size:2rem;} .stat-row{gap:1.6em;} }
+
+  .findingcard{border:1px solid var(--line); border-radius:8px; padding:1.3em 1.5em; margin-bottom:1em;}
+  .findingcard h3{font-size:1.05rem; margin-bottom:.3em;}
+  .findingcard .q{font-size:.93rem; color:var(--ink-soft);}
+
+  footer{max-width:760px; margin:0 auto; padding:3em 24px 6em; color:var(--ink-soft); font-size:.9rem;}
+  .toc{display:flex; flex-wrap:wrap; gap:.4em 1.1em; font-family:'IBM Plex Mono', monospace; font-size:12.5px;}
+  .toc a{color:var(--ink-soft); text-decoration:none; border-bottom:1px dotted var(--line);}
+  .toc a:hover{color:var(--teal); border-color:var(--teal);}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="eyebrow"><span class="dot"></span> ML Internship Capstone · Content Scoring Track</div>
+  <h1 class="title">Do stale pages actually decline — or is that just a story SEO tells itself?</h1>
+  <p class="subtitle">A rule-based baseline, two trained models, and an honest validation audit on 22,006 real content pages — plus a look at where a hand-written rule quietly beat both models.</p>
+  <div class="ladder tight"></div>
+  <div class="toc">
+    <a href="#abstract">Abstract</a><a href="#intro">Introduction</a><a href="#data">Data</a>
+    <a href="#method">Methodology</a><a href="#results">Results</a><a href="#limitations">Limitations</a>
+    <a href="#recs">Recommendations</a><a href="#repro">Reproducibility</a><a href="#credit">Data credit</a>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><span class="num">22,006</span><span class="lbl">pages scored</span></div>
+    <div class="stat"><span class="num">30</span><span class="lbl">clients</span></div>
+    <div class="stat"><span class="num">0.95</span><span class="lbl">precision@20, honest split</span></div>
+    <div class="stat"><span class="num">1</span><span class="lbl">rule beat 2 models</span></div>
+  </div>
+</header>
+
+<main>
+
+<section id="abstract">
+  <div class="section-label">01 · Abstract</div>
+  <h2>Abstract</h2>
+  <p><b>Question:</b> can a page's staleness and click-through gap against its own search position identify which content is worth reviewing first? <b>Data:</b> 30,000 pseudonymized content pages across 32 clients from FlyRank's internship starter release, narrowed to 22,006 pages with enough measured search volume and position data to trust. <b>Method:</b> a transparent hand-written baseline rule, evaluated against Logistic Regression and Random Forest under a client-grouped validation split, with a full leakage audit run against the final feature set. <b>Headline result:</b> the baseline rule matched or beat both trained models at precision@50 and precision@100, and Logistic Regression only edged it out at precision@20 (0.90 vs 0.75) — while Random Forest's apparently strong 0.95–0.98 precision under a naive random split collapsed to 0.58–0.70 once the split respected client boundaries. <b>What it's for:</b> a ranked, human-reviewed starting list for content teams deciding which pages to refresh first — decision-support, not an automated ranking authority.</p>
+</section>
+
+<div class="ladder"></div>
+
+<section id="intro">
+  <div class="section-label">02 · Introduction</div>
+  <h2>The decision this supports</h2>
+  <p>A content team with a few thousand live pages and limited editorial hours needs to answer one question every month: <i>which pages do we refresh first?</i> Guessing by gut feel means the loudest client or the most recently complained-about page wins, not necessarily the page actually losing the most search visibility.</p>
+  <p>FlyRank's own March 2026 portfolio study (341,701 pages, 57 brands) found refresh timing to be one of the strongest measured levers available — 365+ day content refreshed within 30 days showed a 3.2× health boost and 57× more impressions in their sample. That finding motivates the question this capstone actually tests at a smaller scale, with full control over the label, the split, and the leakage checks: <b>does a simple, auditable rule do the job well enough that a model needs to earn the right to replace it?</b></p>
+</section>
+
+<div class="ladder"></div>
+
+<section id="data">
+  <div class="section-label">03 · Data</div>
+  <h2>Data</h2>
+  <p>Source: <span class="mono">content_refresh_anonymized.csv</span>, the FlyRank ML internship starter release — 30,000 rows, 44 columns, one pseudonymized content item per row, 32 clients, trailing-90-day search and analytics metrics.</p>
+  <table>
+    <tr><th>Cut</th><th class="mono">n</th><th>Why</th></tr>
+    <tr><td>Full starter release</td><td class="mono">30,000</td><td>Base population</td></tr>
+    <tr><td>Excluded — no reliable position or under the volume floor</td><td class="mono">7,994 (26.6%)</td><td>Position unknown or <span class="mono">impressions_90d&lt;100</span> — too thin to trust a CTR or position signal</td></tr>
+    <tr><td><b>Scored population (this paper)</b></td><td class="mono"><b>22,006 (73.4%)</b></td><td>Every number below is scoped to this slice</td></tr>
+  </table>
+  <div class="callout warn"><span class="tag">Disclosed, not hidden</span>The excluded 26.6% are systematically low-volume or unranked pages, not a random sample. This paper makes no claim about them.</div>
+  <p>All content_id and client_id values are pseudonymized hashes; no client names, URLs, or private queries appear anywhere in this paper or its source notebooks.</p>
+</section>
+
+<div class="ladder"></div>
+
+<section id="method">
+  <div class="section-label">04 · Methodology</div>
+  <h2>Methodology</h2>
+
+  <h3>Label</h3>
+  <p><span class="mono">is_declining_label</span> = 1 where <span class="mono">trend_direction == 'down'</span> (a 30-day-vs-previous-30-day impression comparison, &gt;10% decline). Base rate on the scored population: <b>59.8%</b> overall, <b>55.3%</b> on the held-out grouped-split test set.</p>
+
+  <h3>The leakage trap this study caught</h3>
+  <p>Six columns — <span class="mono">impressions_last_30d</span>, <span class="mono">impressions_prev_30d</span>, <span class="mono">clicks_last_30d</span>, <span class="mono">clicks_prev_30d</span>, <span class="mono">sessions_last_30d</span>, <span class="mono">sessions_prev_30d</span> — turned out to be the literal inputs the label is computed from (<span class="mono">trend_pct</span> correlates 1.000000 with the pct-change of <span class="mono">impressions_last_30d</span> vs <span class="mono">impressions_prev_30d</span>). Training with them included pushed AUC to <b>0.9586</b>; removing them dropped it to <b>0.7172</b> — the textbook "collapse toward 0.7" confession of label leakage. All models in this paper exclude these six columns plus <span class="mono">trend_direction</span>/<span class="mono">trend_pct</span> themselves.</p>
+
+  <h3>Baseline rule</h3>
+  <p>Plain words: <i>a page is worth reviewing if it hasn't been touched in a while AND its click-through rate is falling well short of what pages in its search position normally get.</i> Score = 50% staleness (days since last update, capped at a year) + 50% CTR gap against the page's position-tier benchmark, hand-weighted — no fitted coefficients. Rows scoring ≥30 get reason code <span class="mono">stale_ctr_underperformer</span>.</p>
+
+  <h3>Models</h3>
+  <p>Logistic Regression and Random Forest, both trained on the same 22,006-row population, same feature set (23 numeric + 9 categorical columns, one-hot encoded), predicting probability of decline — evaluated by precision@K, since this is a ranking question, not a classification one.</p>
+
+  <h3>Validation design</h3>
+  <p>Split by <span class="mono">client_id</span> using <span class="mono">GroupShuffleSplit</span> (24 train clients / 6 test clients, zero overlap) — not a random row split, because pages from the same client share hidden structure (a random split let 28 of 28 test clients also appear in training, letting Random Forest partly memorize client-level patterns instead of learning anything general).</p>
+</section>
+
+<div class="ladder"></div>
+
+<section id="results">
+  <div class="section-label">05 · Results</div>
+  <h2>Results</h2>
+
+  <figure>
+    <img src="img/precision_before_after.png" alt="Precision at K, baseline vs LR vs RF, random split vs grouped split">
+    <figcaption><b>The central result.</b> Random Forest's random-split precision@50 (0.98) looked like the best model in the study. Under the honest client-grouped split, the same model measured 0.58 — worse than the hand-written rule (0.74). The 20–40 point gap between the two bars <i>is</i> the finding.</figcaption>
+  </figure>
+
+  <table>
+    <tr><th>K</th><th class="mono">base rate</th><th class="mono">baseline rule</th><th class="mono">logistic reg.</th><th class="mono">random forest</th></tr>
+    <tr><td>20</td><td class="mono">0.553</td><td class="mono">0.75</td><td class="mono win">0.90</td><td class="mono">0.70</td></tr>
+    <tr><td>50</td><td class="mono">0.553</td><td class="mono win">0.74</td><td class="mono">0.70</td><td class="mono">0.58</td></tr>
+    <tr><td>100</td><td class="mono">0.553</td><td class="mono">0.69</td><td class="mono win">0.72</td><td class="mono">0.61</td></tr>
+  </table>
+  <p>All three numbers are computed on the same client-grouped test split, in the same notebook run, next to the same base rate — the comparison the training-honest-models discipline calls non-negotiable.</p>
+
+  <figure>
+    <img src="img/ctr_by_position.png" alt="Median CTR by search position tier">
+    <figcaption>Click-through rate collapses from 0.23% at page 1 to effectively 0% once a page falls past position 50 — the signal the CTR-gap half of the baseline rule leans on. One inversion: <span class="mono">top_3</span> (0.19%) sits slightly below <span class="mono">page_1</span> (0.23%), plausibly SERP-feature suppression at the very top rather than noise, given the sample sizes involved.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="img/archetype_distribution.png" alt="Distribution of content archetypes by staleness and CTR gap">
+    <figcaption>Crossing staleness with CTR gap splits the scored population into four archetypes. In this snapshot, genuine staleness is rare (35 of 22,006 pages) — almost all of the measurable opportunity is a CTR gap, not content age.</figcaption>
+  </figure>
+</section>
+
+<div class="ladder"></div>
+
+<section id="limitations">
+  <div class="section-label">06 · Limitations &amp; honest framing</div>
+  <h2>What this cannot claim</h2>
+  <div class="callout warn"><span class="tag">Cross-sectional, no intervention</span>This is a single 90-day snapshot. Nothing here supports "refreshing a page will increase its traffic" — only that stale, underperforming pages look different from healthy ones in this dataset, this period. The honest form is decision-support: these pages look worth reviewing first, because of X.</div>
+  <ul>
+    <li><b>Small test set.</b> The grouped split holds out only 6 clients. Which 6 land in test can swing the numbers — this is disclosed, not smoothed over.</li>
+    <li><b>Scoped population.</b> All results describe the 73.4% of pages with enough volume and position data to score; the excluded 26.6% are unaddressed.</li>
+    <li><b>Client-batch artifacts.</b> Several top-ranked pages within one client share an identical <span class="mono">days_since_last_update</span> — a bulk platform timestamp, not independent evidence each page individually decayed. A human reviewer should sample across clients, not batch-action one client's whole block.</li>
+    <li><b>Trend-independent scoring.</b> The rule and models never see <span class="mono">trend_direction</span> as a feature (by design, to avoid leakage) — so a small number of flagged pages are, on inspection, not actually declining by the label (stable-trend pages with low CTR and high staleness still score high). That's expected behavior, not a bug, but worth a human's second look.</li>
+    <li><b>One provider's data.</b> This paper's ML section covers the 30,000-row starter release; findings are not claimed to generalize beyond it without re-validation.</li>
+  </ul>
+</section>
+
+<div class="ladder"></div>
+
+<section id="recs">
+  <div class="section-label">07 · Ranked recommendations</div>
+  <h2>The action playbook</h2>
+  <table>
+    <tr><th>Archetype</th><th class="mono">n</th><th>Action</th><th>Reason code</th></tr>
+    <tr><td>stale_and_underperforming</td><td class="mono">11</td><td class="win">refresh_priority</td><td class="mono">stale_ctr_underperformer</td></tr>
+    <tr><td>fresh_but_underperforming</td><td class="mono">8,725</td><td>fix_ctr_snippet</td><td class="mono">ctr_gap_only</td></tr>
+    <tr><td>stale_but_on_target</td><td class="mono">24</td><td>refresh_optional</td><td class="mono">staleness_only</td></tr>
+    <tr><td>healthy</td><td class="mono">13,246</td><td>monitor</td><td class="mono">none</td></tr>
+  </table>
+  <p>Ranking method used for the queue: <b>the baseline rule</b>, not a trained model — it matched or beat both LR and RF at K=50/K=100 under the honest split, and is fully auditable by a human reading one formula.</p>
+  <div class="callout"><span class="tag">Human review before acting</span>Confirm trend context on flagged-but-stable pages; sample-check client-batch timestamp clusters before batch-actioning; never treat the 11-page <span class="mono">refresh_priority</span> bucket as a program-level trend given its size.</div>
+  <div class="callout warn"><span class="tag">Never automate</span>No auto-publish, auto-edit, or auto-unpublish from this score alone. Never use the score as a content-owner performance input. Never infer a score for the excluded 26.6% of pages.</div>
+  <p><b>Monitoring triggers:</b> re-check the archetype distribution monthly; re-run precision@K against realized 30/60-day outcomes on refreshed pages; re-run the grouped-split evaluation if the client roster changes meaningfully. Retrain quarterly, or immediately if measured precision@50 drifts toward the 0.55 base rate.</p>
+</section>
+
+<div class="ladder"></div>
+
+<section id="repro">
+  <div class="section-label">08 · Reproducibility</div>
+  <h2>Reproducibility</h2>
+  <div class="panel">
+    <div class="section-label">Repo &amp; notebooks</div>
+    <ul>
+      <li><a href="https://github.com/Purvansh09/flyrannk_week1">github.com/Purvansh09/flyrannk_week1</a></li>
+      <li><span class="mono">work/notebooks/w04_baseline_score.ipynb</span> — baseline rule + signal audit</li>
+      <li><span class="mono">work/notebooks/w05_model.ipynb</span> — Logistic Regression + Random Forest</li>
+      <li><span class="mono">work/notebooks/w06_validation_audit.ipynb</span> — leakage audit, grouped-split before/after</li>
+      <li><span class="mono">work/notebooks/w07_action_playbook.ipynb</span> — archetypes, ranked queue, exports</li>
+    </ul>
+    <div class="section-label" style="margin-top:1.2em;">Rerun</div>
+    <p style="margin-bottom:0;">Random seed fixed at <span class="mono">random_state=42</span> throughout. scikit-learn <span class="mono">1.8.0</span>. Open any notebook via the Colab badge at the top of the file and Runtime → Run All; outputs regenerate in <span class="mono">work/outputs/</span> (gitignored by design — the CI leak-guard blocks committed data files) and metrics land in committed JSON receipts in the same folder.</p>
+  </div>
+</section>
+
+<div class="ladder"></div>
+
+<section id="credit">
+  <div class="section-label">09 · Acknowledgments &amp; data credit</div>
+  <h2>Data credit</h2>
+  <p>Built on the FlyRank ML Internship dataset. <a href="https://flyrank.ai">flyrank.ai</a></p>
+  <p style="color:var(--ink-soft); font-size:.92rem;">Additional context drawn from FlyRank's public report, <i>The State of AI-Driven SEO</i> (March 2026) — cited in the Introduction and Limitations, not reproduced verbatim.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="ladder tight"></div>
+  <p>Capstone paper · ML Internship, Content Refresh / Opportunity Scoring track · Deployed via GitHub Pages.</p>
+</footer>
+
+</body>
+</html>
